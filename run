@@ -1,0 +1,40 @@
+#!/bin/bash
+if [[ "$1" =~ .*java$ ]] ; then
+    echo -e "\e[1;36mCompiling Java file\e[1;m"
+	javac "$pwd$1"
+	echo -e "\e[1;36mRunning...\e[1;m"
+	java "$pwd$(basename $1 .java)"
+	rm "$(basename $1 .java).class"
+fi
+if [[ "$1" =~ .*c$ ]] ; then
+    echo -e "\e[1;36mCompiling C file\e[1;m"
+	g++ "$pwd$1" -o $(basename $pwd$1 .c)
+	echo -e "\e[1;36mRunning...\e[1;m"
+	./$(basename $pwd$1 .c)
+	rm "$(basename $pwd$1 .c)"
+fi
+if [[ "$1" =~ .*cpp$ ]] ; then
+    echo -e "\e[1;36mCompiling C++ file\e[1;m"
+	g++ "$pwd$1" -o $(basename $pwd$1 .cpp)
+	echo -e "\e[1;36mRunning...\e[1;m"
+	./$(basename $pwd$1 .cpp)
+	rm "$(basename $pwd$1 .cpp)"
+fi
+if [[ "$1" =~ .*kt$ ]] ; then
+    echo -e "\e[1;36mCompiling Kotlin file\e[1;m"
+	kotlinc "$pwd$1" -include-runtime -d $(basename $pwd$1 .kt).jar
+	echo -e "\e[1;36mRunning...\e[1;m"
+	java -jar $(basename $pwd$1 .kt).jar
+	rm "$(basename $pwd$1 .kt).jar"
+fi
+if [[ "$1" =~ .*py$ ]] ; then
+    echo -e "\e[1;36mRunning Python file\e[1;m"
+	python "$pwd$1"
+fi
+if [[ "$1" =~ .*cs$ ]] ; then
+    echo -e "\e[1;36mCompiling C# file\e[1;m"
+	csc "$pwd$1"
+	echo -e "\e[1;36mRunning...\e[1;m"
+	mono $(basename $pwd$1 .cs).exe
+	rm "$(basename $pwd$1 .cs).exe"
+fi
