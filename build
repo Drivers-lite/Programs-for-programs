@@ -1,0 +1,42 @@
+#!/bin/sh
+# [Gedit Tool]
+# Name=Build
+# Comment=Run “make” in the document directory
+# Input=nothing
+# Output=output-panel
+# Shortcut=<Control>F8
+# Applicability=all
+# Save-files=document
+# Languages=
+
+filename=$GEDIT_CURRENT_DOCUMENT_PATH
+if [ "${filename##*.}" = cpp ]; then
+	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .cpp)
+	echo "▶️ Compiling C++ file"
+	g++ "$GEDIT_CURRENT_DOCUMENT_PATH" -o $EXECUTABLE_FILE
+	[ $? -eq 0 ] && (
+		echo "🆗️ Compilation successful"
+		echo "✅️ Running..."
+		gnome-terminal -- bash -c "
+			./$EXECUTABLE_FILE
+			rm $EXECUTABLE_FILE
+			$SHELL
+		"
+	) ||
+		echo "🔴️ Compilation error"
+
+elif [ "${filename##*.}" = java ]; then
+	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
+	echo "▶️ Compiling Java file"
+	javac "$GEDIT_CURRENT_DOCUMENT_PATH"
+	[ $? -eq 0 ] && (
+		echo "🆗️ Compilation successful"
+		echo "✅️ Running..."
+		gnome-terminal -- bash -c "
+			java $EXECUTABLE_FILE
+			rm "$EXECUTABLE_FILE.class"
+			$SHELL
+		"
+	) ||
+		echo "🔴️ Compilation error"
+fi
