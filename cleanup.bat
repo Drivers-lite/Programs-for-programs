@@ -1,5 +1,4 @@
-cd /d G:
-cd "G:\LeisureCoding\DSA_Practice"
+cd "Path\to\concerned\folder"
 del /s *.exe
 del /s *.jar
 del /s *.class
