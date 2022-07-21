@@ -29,12 +29,13 @@ A set of programs that make compiling and executing simple programs easier
 ## The [cleanup.bat](https://github.com/Drivers-lite/Programs-for-programs/blob/main/cleanup.bat) batch script (for Windows)
 ### Description:
   Cleans up the executables, jars and class files created while executing the programs in the concerned folder.
+### ⚠⚠PRECAUTION:
+  BE EXTRA CAREFUL WHILE PUTTING THE PARENT PATH TO THE FOLDER, OTHERWISRE, SERIOUS DAMAGES MAY BE INCURRED FOR WHICH THE AUTHOR(S)/CONTRIBUTOR(S) SHALL NOT BE HELD RESPONSIBLE.
 ### Currently supports:
   Deletes .exe, .jar, .class files
 ### Usage:
   Replace the path in first line by the complete path of the concerned folder. Then run the batch file to cleanup the redundant files recursively.
-### PRECAUTION:
-  BE EXTRA CAREFUL WHILE PUTTING THE PARENT PATH TO THE FOLDER, OTHERWISRE, SERIOUS DAMAGES MAY BE INCURRED FOR WHICH THE AUTHOR(S)/CONTRIBUTOR(S) SHALL NOT BE HELD RESPONSIBLE.
+
 
 
 
