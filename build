@@ -4,39 +4,240 @@
 # Comment=Run “make” in the document directory
 # Input=nothing
 # Output=output-panel
-# Shortcut=<Control>F8
+# Shortcut=F4
 # Applicability=all
 # Save-files=document
 # Languages=
 
-filename=$GEDIT_CURRENT_DOCUMENT_PATH
-if [ "${filename##*.}" = cpp ]; then
-	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .cpp)
-	echo "▶️ Compiling C++ file"
-	g++ "$GEDIT_CURRENT_DOCUMENT_PATH" -o $EXECUTABLE_FILE
-	[ $? -eq 0 ] && (
-		echo "🆗️ Compilation successful"
-		echo "✅️ Running..."
-		gnome-terminal -- bash -c "
-			./$EXECUTABLE_FILE
-			rm $EXECUTABLE_FILE
-			$SHELL
-		"
-	) ||
-		echo "🔴️ Compilation error"
+FILE_NAME=$GEDIT_CURRENT_DOCUMENT_PATH
+FILE_EXTENSION=${FILE_NAME##*.}
 
-elif [ "${filename##*.}" = java ]; then
-	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
-	echo "▶️ Compiling Java file"
-	javac "$GEDIT_CURRENT_DOCUMENT_PATH"
-	[ $? -eq 0 ] && (
-		echo "🆗️ Compilation successful"
-		echo "✅️ Running..."
-		gnome-terminal -- bash -c "
+format_document () {
+	$FORMAT_CMD
+	[ $? -eq 0 ] && echo "💫️ Code formatting successful" || echo "🤖️ Could not format code.\n    ERROR CODE: $?"
+}
+
+compile_and_run () {
+	echo $BEFORE_COMPILE_MSG
+	$COMPILATION_CMD
+	[ $? -eq 0 ] && ( 
+		echo $AFTER_COMPILE_MSG
+		run
+	) ||
+		echo $COMPILATION_ERR_MSG
+}
+
+run() {
+	echo $BEFORE_EXECUTION_MSG
+	gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "$EXECUTION_CMD" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
+
+}
+
+case "$FILE_EXTENSION" in
+	"java")
+		LANGUAGE_PRETTY_NAME="Java"
+		EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
+		FORMAT_CMD="npx prettier $GEDIT_CURRENT_DOCUMENT_PATH --write --plugin=prettier-plugin-java --print-width=200 --tab-width=4 --use-tabs=true --log-level=silent"
+		COMPILATION_CMD="javac $GEDIT_CURRENT_DOCUMENT_PATH"
+		EXECUTION_CMD="
 			java $EXECUTABLE_FILE
 			rm "$EXECUTABLE_FILE.class"
 			$SHELL
 		"
-	) ||
-		echo "🔴️ Compilation error"
-fi
+		BEFORE_COMPILE_MSG="▶️ Compiling $LANGUAGE_PRETTY_NAME file"
+		BEFORE_EXECUTION_MSG="✅️ Running..."
+		AFTER_COMPILE_MSG="🆗️ Compilation successful"
+		COMPILATION_ERR_MSG="🔴️ Compilation error"
+		format_document
+		compile_and_run
+		;;
+	"cpp")
+		LANGUAGE_PRETTY_NAME="C++"
+		EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
+		FORMAT_CMD=""
+		COMPILATION_CMD="g++ $GEDIT_CURRENT_DOCUMENT_PATH -o $EXECUTABLE_FILE"
+		EXECUTION_CMD="
+			./$EXECUTABLE_FILE
+			rm $EXECUTABLE_FILE
+			$SHELL
+		"
+		BEFORE_COMPILE_MSG="▶️ Compiling $LANGUAGE_PRETTY_NAME file"
+		BEFORE_EXECUTION_MSG="✅️ Running..."
+		AFTER_COMPILE_MSG="🆗️ Compilation successful"
+		COMPILATION_ERR_MSG="🔴️ Compilation error"
+#		format_document
+		compile_and_run
+		;;
+	"kt")
+		LANGUAGE_PRETTY_NAME="Kotlin"
+		EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .kt)
+#		FORMAT_CMD="npx prettier $GEDIT_CURRENT_DOCUMENT_PATH --write --plugin=prettier-plugin-kotlin --print-width=200 --tab-width=4 --use-tabs=true --log-level=silent"
+		COMPILATION_CMD="kotlinc $GEDIT_CURRENT_DOCUMENT_PATH -include-runtime -d "$EXECUTABLE_FILE.jar""
+		EXECUTION_CMD="
+			java -jar "$EXECUTABLE_FILE.jar"
+			rm "$EXECUTABLE_FILE.jar"
+			$SHELL
+		"
+		BEFORE_COMPILE_MSG="▶️ Compiling $LANGUAGE_PRETTY_NAME file"
+		BEFORE_EXECUTION_MSG="✅️ Running..."
+		AFTER_COMPILE_MSG="🆗️ Compilation successful"
+		COMPILATION_ERR_MSG="🔴️ Compilation error"
+#		format_document
+		compile_and_run
+		;;
+	"cs")
+		LANGUAGE_PRETTY_NAME="C#"
+		EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .cs)
+		FORMAT_CMD=""
+		COMPILATION_CMD="mono-csc $GEDIT_CURRENT_DOCUMENT_PATH"
+		EXECUTION_CMD="
+			mono "$EXECUTABLE_FILE.exe"
+			rm "$EXECUTABLE_FILE.exe"
+			$SHELL
+		"
+		BEFORE_COMPILE_MSG="▶️ Compiling $LANGUAGE_PRETTY_NAME file"
+		BEFORE_EXECUTION_MSG="✅️ Running..."
+		AFTER_COMPILE_MSG="🆗️ Compilation successful"
+		COMPILATION_ERR_MSG="🔴️ Compilation error"
+#		format_document
+		compile_and_run
+		;;
+	"py")
+		LANGUAGE_PRETTY_NAME="Python"
+		FORMAT_CMD=""
+		EXECUTION_CMD="
+			python3 $GEDIT_CURRENT_DOCUMENT_PATH
+			$SHELL
+		"
+		BEFORE_EXECUTION_MSG="▶️ Executing $LANGUAGE_PRETTY_NAME file"
+#		format_document
+		run
+		;;
+	"js")
+		LANGUAGE_PRETTY_NAME="JavaScript"
+		FORMAT_CMD=""
+		EXECUTION_CMD="
+			node $GEDIT_CURRENT_DOCUMENT_PATH
+			$SHELL
+		"
+		BEFORE_EXECUTION_MSG="▶️ Executing $LANGUAGE_PRETTY_NAME file"
+#		format_document
+		run
+		;;
+	*)
+		echo "❕️ No support found for $FILE_EXTENSION file extension"
+		exit 1
+		;;
+esac
+
+#PRETTY_NAME["java"]="Java"
+#PRETTY_NAME["cpp"]="C++"
+#PRETTY_NAME["kt"]="Kotlin"
+#PRETTY_NAME["py"]="Python"
+#PRETTY_NAME["js"]="JavaScript"
+#PRETTY_NAME["cs"]="C#"
+
+#LANGUAGE_PRETTY_NAME=${PRETTY_NAME[$FILE_EXTENSION]}
+
+#declare -A EXECUTION_COMMAND
+#EXECUTION_COMMAND["java"]="java $EXECUTABLE_FILE
+#	rm "$EXECUTABLE_FILE.class"
+#	$SHELL"
+
+
+
+#if [ "${FILE_NAME##*.}" = cpp ]; then
+#	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .cpp)
+#	echo "▶️ Compiling C++ file"
+#	g++ "$GEDIT_CURRENT_DOCUMENT_PATH" -o $EXECUTABLE_FILE
+#	[ $? -eq 0 ] && (
+#		echo "🆗️ Compilation successful"
+#		echo "✅️ Running..."
+#		gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "
+#			./$EXECUTABLE_FILE
+#			rm $EXECUTABLE_FILE
+#			$SHELL
+#		" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
+#	) ||
+#		echo "🔴️ Compilation error"
+
+#elif [ $FILE_EXTENSION = java ]; then
+#	LANGUAGE_PRETTY_NAME="Java"
+#	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
+#	compilation_cmd="javac $GEDIT_CURRENT_DOCUMENT_PATH"
+##	execution_cmd="java $EXECUTABLE_FILE
+##	rm "$EXECUTABLE_FILE.class"
+##	$SHELL"
+#	format_document
+#	compile_and_run "javac $GEDIT_CURRENT_DOCUMENT_PATH" "java $EXECUTABLE_FILE echo hell $SHELL"
+
+
+#	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
+#	echo "▶️ Compiling Java file"
+#	javac "$GEDIT_CURRENT_DOCUMENT_PATH"
+#	[ $? -eq 0 ] && (
+#		echo "🆗️ Compilation successful"
+#		echo "✅️ Running..."
+#		gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "
+#			java $EXECUTABLE_FILE
+#			rm "$EXECUTABLE_FILE.class"
+#			$SHELL
+#		" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
+#	) ||
+#		echo "🔴️ Compilation error"
+#	echo "Does nothing"
+
+#elif [ "${FILE_NAME##*.}" = kt ]; then
+#	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .kt)
+#	echo "▶️ Compiling Kotlin file"
+#	kotlinc "$GEDIT_CURRENT_DOCUMENT_PATH" -include-runtime -d "$EXECUTABLE_FILE.jar"
+#	[ $? -eq 0 ] && (
+#		echo "🆗️ Compilation successful"
+#		echo "✅️ Running..."
+#		gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "
+#			java -jar "$EXECUTABLE_FILE.jar"
+#			rm "$EXECUTABLE_FILE.jar"
+#			$SHELL
+#		" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
+#	) ||
+#		echo "🔴️ Compilation error"
+
+#elif [ "${FILE_NAME##*.}" = py ]; then
+#	echo "▶️ Executing python file"
+#	[ $? -eq 0 ] && (
+#		gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "
+#			python3 $GEDIT_CURRENT_DOCUMENT_PATH
+#			$SHELL
+#		" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
+#	) ||
+#		echo "🔴️ Compilation error"
+
+#elif [ "${FILE_NAME##*.}" = js ]; then
+#	echo "▶️ Executing javascript file"
+#	[ $? -eq 0 ] && (
+#		gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "
+#			node $GEDIT_CURRENT_DOCUMENT_PATH
+#			$SHELL
+#		" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
+#	) ||
+#		echo "🔴️ Compilation error"
+
+#elif [ "${FILE_NAME##*.}" = cs ]; then
+#	EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .cs)
+#	echo "▶️ Compiling C# file"
+#	mono-csc "$GEDIT_CURRENT_DOCUMENT_PATH"
+#	[ $? -eq 0 ] && (
+#		echo "🆗️ Compilation successful"
+#		echo "✅️ Running..."
+#		gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "
+#			mono "$EXECUTABLE_FILE.exe"
+#			rm "$EXECUTABLE_FILE.exe"
+#			$SHELL
+#		" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
+#	) ||
+#		echo "🔴️ Compilation error"
+
+#else
+#	echo "❕️ No compiler found for ${FILE_NAME##*.} file extension"
+
+#fi
