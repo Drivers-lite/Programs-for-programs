@@ -1,43 +1,74 @@
 #!/bin/sh
-# [Gedit Tool]
-# Name=Build
-# Comment=Run “make” in the document directory
-# Input=nothing
-# Output=output-panel
-# Shortcut=F4
-# Applicability=all
-# Save-files=document
-# Languages=
-
 FILE_NAME=$GEDIT_CURRENT_DOCUMENT_PATH
 FILE_EXTENSION=${FILE_NAME##*.}
 
+#This is required because it is not loaded by default when another terminal is opened.
+#In the normal terminal, this is loaded from ~/.bashrc
+NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+format_time () {
+	time_in_millis=$1
+	milliseconds=$((time_in_millis % 1000))
+	seconds=$((time_in_millis / 1000))
+	minutes=$((seconds / 60))
+	seconds=$((seconds % 60))
+	hours=$((minutes / 60))
+	minutes=$((minutes % 60))
+	pretty_time=""
+	if [ $hours -gt 0 ]; then
+		pretty_time="$pretty_time ${hours}hrs"
+	fi
+	if [ $minutes -gt 0 ]; then
+		pretty_time="$pretty_time ${minutes}min"
+	fi
+	if [ $seconds -gt 0 ]; then
+		pretty_time="$pretty_time ${seconds}s"
+	fi
+	if [ $milliseconds -gt 0 ]; then
+		pretty_time="$pretty_time ${milliseconds}ms"
+	fi
+	echo $pretty_time
+}
+
 format_document () {
+	start=`date +%s%3N`
 	$FORMAT_CMD
-	[ $? -eq 0 ] && echo "💫️ Code formatting successful" || echo "🤖️ Could not format code.\n    ERROR CODE: $?"
+	format_response_code=$?
+	end=`date +%s%3N`
+	timeTaken=`expr $end - $start`
+	[ $format_response_code -eq 0 ] && echo "💫️ Code formatting successful\t\t\t\t\t| $(format_time $timeTaken)" || echo "🤖️ Could not format code.\n    ERROR CODE: $?\t\t\t\t\t| $(format_time $timeTaken)"
 }
 
 compile_and_run () {
 	echo $BEFORE_COMPILE_MSG
+	start=`date +%s%3N`
 	$COMPILATION_CMD
-	[ $? -eq 0 ] && ( 
-		echo $AFTER_COMPILE_MSG
+	compilation_response_code=$?
+	end=`date +%s%3N`
+	timeTaken=`expr $end - $start`
+	[ $compilation_response_code -eq 0 ] && ( 
+		echo "$AFTER_COMPILE_MSG\t\t\t\t\t| $(format_time $timeTaken)"
 		run
 	) ||
-		echo $COMPILATION_ERR_MSG
+		echo "$COMPILATION_ERR_MSG\t\t\t\t\t| $(format_time $timeTaken)"
 }
 
 run() {
-	echo $BEFORE_EXECUTION_MSG
+	echo -n $BEFORE_EXECUTION_MSG
+	start=`date +%s%3N`
 	gnome-terminal --title="$GEDIT_CURRENT_DOCUMENT_PATH" -- bash -c "$EXECUTION_CMD" && wmctrl -a $GEDIT_CURRENT_DOCUMENT_PATH -b add,above
-
+	end=`date +%s%3N`
+	timeTaken=`expr $end - $start`
+	echo "\t\t\t\t\t| $(format_time $timeTaken)"
 }
 
 case "$FILE_EXTENSION" in
 	"java")
 		LANGUAGE_PRETTY_NAME="Java"
 		EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
-		FORMAT_CMD="npx prettier $GEDIT_CURRENT_DOCUMENT_PATH --write --plugin=prettier-plugin-java --print-width=200 --tab-width=4 --use-tabs=true --log-level=silent"
+		FORMAT_CMD="npx prettier $GEDIT_CURRENT_DOCUMENT_PATH --write --plugin=prettier-plugin-java --print-width=200 --tab-width=4 --use-tabs=true"
 		COMPILATION_CMD="javac $GEDIT_CURRENT_DOCUMENT_PATH"
 		EXECUTION_CMD="
 			java $EXECUTABLE_FILE
@@ -53,7 +84,7 @@ case "$FILE_EXTENSION" in
 		;;
 	"cpp")
 		LANGUAGE_PRETTY_NAME="C++"
-		EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .java)
+		EXECUTABLE_FILE=$(basename "$GEDIT_CURRENT_DOCUMENT_PATH" .cpp)
 		FORMAT_CMD=""
 		COMPILATION_CMD="g++ $GEDIT_CURRENT_DOCUMENT_PATH -o $EXECUTABLE_FILE"
 		EXECUTION_CMD="
@@ -117,6 +148,10 @@ case "$FILE_EXTENSION" in
 		LANGUAGE_PRETTY_NAME="JavaScript"
 		FORMAT_CMD=""
 		EXECUTION_CMD="
+			echo \"Using nvm\"
+			echo -n \"Default node version: \"
+			node -v
+			echo -e \"\e[1;47;30mPress Ctrl+D to finish the input\e[1;m\"
 			node $GEDIT_CURRENT_DOCUMENT_PATH
 			$SHELL
 		"
@@ -241,3 +276,4 @@ esac
 #	echo "❕️ No compiler found for ${FILE_NAME##*.} file extension"
 
 #fi
+
