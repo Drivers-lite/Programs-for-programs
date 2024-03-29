@@ -1,13 +1,17 @@
 #!/bin/sh
+# [Gedit Tool]
+# Name=Build
+# Comment=Run “make” in the document directory
+# Input=nothing
+# Output=output-panel
+# Shortcut=F4
+# Applicability=all
+# Save-files=document
+# Languages=
+
 FILE_NAME=$GEDIT_CURRENT_DOCUMENT_PATH
 FILE_EXTENSION=${FILE_NAME##*.}
-
-#This is required because it is not loaded by default when another terminal is opened.
-#In the normal terminal, this is loaded from ~/.bashrc
-NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
+	
 format_time () {
 	time_in_millis=$1
 	milliseconds=$((time_in_millis % 1000))
@@ -31,6 +35,17 @@ format_time () {
 	fi
 	echo $pretty_time
 }
+
+setup_node() {
+	echo -n "⚙️ Set up "
+	#This is required because it is not loaded by default when another terminal is opened.
+	#In the normal terminal, this is loaded from ~/.bashrc
+	NVM_DIR="$HOME/.nvm"
+	[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+	[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+}
+
+setup_node
 
 format_document () {
 	start=`date +%s%3N`
@@ -276,4 +291,3 @@ esac
 #	echo "❕️ No compiler found for ${FILE_NAME##*.} file extension"
 
 #fi
-
