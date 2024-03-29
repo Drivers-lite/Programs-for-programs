@@ -21,7 +21,7 @@ A set of programs that make compiling and executing simple programs easier
 ### Description:
   Makes the gedit text editor behave like an IDE for simple programs by enabling 'compile and run with single shortcut' feature.
 ### Currently supports:
-  C++/Java programs
+  C++, Java, Kotlin, C#, Python, Javascript programs
 ### Usage:
   Enable the gedit plugin 'external tools'. Put the script in a new tool and assign it your favourite shortcut. (Also select save document for great results).
 ### Prerequisites:
